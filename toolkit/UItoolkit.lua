@@ -84,14 +84,14 @@ local function makeTaggedFrame(frame)
         :setBackground(colors.lightGray)
         :setIgnoreOffset(true)
     local onTopBarSelect = function(self)
-        local cont = self:getItemCount()
+        local cont = #self:getItems()
         for i = 1, cont do
-            local item = self:getItem(i)
-            if item.text == self:getValue().text then
+            local item = self:getItems()[i]
+            if item.text == self:getSelectedItem().text then
                 --print_r(item.args[1])
-                item.args[1]:setVisible(true)
+                item.page:setVisible(true)
             else
-                item.args[1]:setVisible(false)
+                item.page:setVisible(false)
             end
         end
     end
@@ -100,12 +100,12 @@ local function makeTaggedFrame(frame)
         BackgroundColor = BackgroundColor or colors.white
         tabFrotColor = tabFrotColor or colors.white
         tabBgColor = tabBgColor or colors.gray
-        local page = frame:addFlexbox()
+        local page = frame:addFrame()
             :setPosition(1, 2)
             :setSize("{parent.width-1}", "{parent.height-2}")
             :setBackground(BackgroundColor)
             :setVisible(false)
-        topBar:addItem(name, tabBgColor, tabFrotColor, page)
+        topBar:addItem({text=name,background=tabBgColor,foreground=tabFrotColor,page=page})
             :onSelect(onTopBarSelect)
         return page
     end

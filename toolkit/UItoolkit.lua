@@ -117,9 +117,11 @@ end
 
 --- 组合控件:弹出框
 local function createPopup(container, x, y, w, h, title,Draggable,Resizable)
+    x = x or "{math.floor((parent.width-self.width) / 2 > 0 and math.floor((parent.width-self.width) / 2) or 1)}"
+    y = y or "{math.floor((parent.height-self.height) / 2 > 0 and math.floor((parent.height-self.height) / 2) or 1)}"
     local popup = container:addFrame()
-        :setPosition(x, y)
         :setSize(w, h)
+        :setPosition(x, y)
         :setBackground(colors.gray)
         :setForeground(colors.white)
         -- :setBorder(colors.black)
@@ -170,22 +172,22 @@ local function createPopup(container, x, y, w, h, title,Draggable,Resizable)
     return popup,content
 end
 --组合控件:带标签的布局
-local function addLabeledLayout(parent,labelText,labelColor,direction,pandding)
+local function addLabeledFlexbox(parent,labelText,labelColor,direction,pandding)
      labelColor = labelColor or colors.black
     pandding = pandding or 0
     direction = direction or "row"
     local labelLength = #labelText
-    local layout = parent:addFlexbox():setSize(1,1)
+    local flexbox = parent:addFlexbox()--:setSize(1,1)
     :setFlexDirection(direction):setFlexAlignItems("center")
-    local label = layout:addLabel():setText(labelText):setBackground(colors.nothing):setIgnoreOffset(true)
-    layout:setBackground(parent:getBackground())
+    local label = flexbox:addLabel():setText(labelText):setBackgroundEnabled(false):setIgnoreOffset(true)
+    flexbox:setBackground(parent:getBackground())
     label:setForeground(labelColor)
-    label:setFlexMinWidth(labelLength+1):setFlexMaxHeight(1)
-    layout.label = label
-    layout.setLabelText = function(self,text)
+    -- label:setFlexMinWidth(labelLength+1):setFlexMaxHeight(1)
+    flexbox.label = label
+    flexbox.setLabelText = function(self,text)
         self.label:setText(text)
     end
-    return layout , label
+    return flexbox , label
     
 end
 
@@ -195,10 +197,10 @@ local function createSimpleDialog(container, x, y, w, h, title,Draggable,Resizab
     content:setFlexDirection("column"):setFlexAlignItems("stretch"):setFlexSpacing(1)
 
     local restSpace =content:addFlexbox():setFlexDirection("row"):setFlexAlignItems("flex-end"):setFlexJustifyContent("flex-end"):setFlexSpacing(1)
-                                        :setFlexGrow(0.1):setFlexShrink(999):setFlexBasis(2):setFlexOrder(999):setFlexMinHeight(2)--:setBorder(colors.red)
+                                        :setFlexGrow(0.1):setFlexShrink(999):setFlexOrder(999):setFlexMinHeight(2)--:setBorder(colors.red)
                                         :setBackground(content:getBackground())
-    local confirm = restSpace:addButton():setText("Confirm"):setFlexGrow(1):setFlexShrink(1):setFlexBasis(2):setFlexMinWidth(3)
-    local cancel = restSpace:addButton():setText("Cancel"):setFlexGrow(1):setFlexShrink(1):setFlexBasis(2):setFlexMinWidth(3)
+    local confirm = restSpace:addButton():setText("Confirm"):setFlexGrow(1):setFlexShrink(1):setFlexMinWidth(3)
+    local cancel = restSpace:addButton():setText("Cancel"):setFlexGrow(1):setFlexShrink(1):setFlexMinWidth(3)
 
     cancel:onClickUp(popup.close)
 
@@ -210,7 +212,7 @@ end
 --组合控件:提示框
 local function createAlert(container, x, y, w, h, text,onConfirm,onCancel)
     local popup,content,confirm,cancel = createSimpleDialog(container, x, y, w, h, "Alert",true,true)
-    local label = content:addLabel():setText(text):setFlexGrow(1):setFlexShrink(1):setFlexBasis(5):setFlexOrder(1)
+    local label = content:addLabel():setText(text):setFlexGrow(1):setFlexShrink(1):setFlexOrder(1)
     confirm:onClickUp(onConfirm, popup.close)
     cancel:onClick(onCancel)
     return popup,content,confirm,cancel,label
@@ -221,7 +223,7 @@ local function createListSelector(container, x, y, w, h, title,Draggable,Resizab
     local popup,content,confirm,cancel = createSimpleDialog(container, x, y, w, h, title,Draggable,Resizable)
     local items = items or {}
     local itemNum = #items
-    local list = content:addList():setFlexGrow(0.1):setFlexBasis(clamp(itemNum,1,3)):setFlexMinHeight(clamp(itemNum,1,3)):setFlexOrder(1)
+    local list = content:addList():setFlexGrow(0.1):setFlexMinHeight(clamp(itemNum,1,3)):setFlexOrder(1)
 
     
     for i=1,itemNum do
@@ -245,48 +247,48 @@ local function createGenericList(parent,title,direction,pandding,gap,alignItems,
     gap = gap or 1
     alignItems = alignItems or "flex-start"
     justifyContent = justifyContent or "flex-start"
-    local layout = parent:addFlexbox()
+    local flexbox = parent:addFlexbox()
     :setFlexDirection(direction):setFlexSpacing(gap):setFlexAlignItems(alignItems):setFlexJustifyContent(justifyContent)
-    layout:setBackground(parent:getBackground())
-    layout:setBorder(colors.black)
-    if parent:getType() == "layout" then
-        layout:setFlexGrow(1):setFlexShrink(0):setFlexBasis(5)
+    flexbox:setBackground(parent:getBackground())
+    flexbox:setBorder(colors.black)
+    if parent:getType() == "flexbox" then
+        flexbox:setFlexGrow(1):setFlexShrink(0)
     end
-    layout:addLabel():setText(title):setForeground(colors.black):setBackground(parent:getBackground()):setFlexOrder(-1)
-    return layout
+    flexbox:addLabel():setText(title):setForeground(colors.black):setBackground(parent:getBackground()):setFlexOrder(-1)
+    return flexbox
     
 end
 --组合控件:滑条输入框
 local function createSliderInput(parent,label, min, max, defaultValue,onValueChange)
-    local layout = parent:addFlexbox():setFlexDirection("row"):setFlexSpacing(1):setFlexAlignItems("center")
-    layout:setFlexShrink(1):setHeight(5)
-    layout:setBackground(parent:getBackground())
-    layout.label = layout:addLabel():setText(label):setForeground(colors.black):setBackground(parent:getBackground()):setFlexGrow(1):setFlexShrink(0)
+    local flexbox = parent:addFlexbox():setFlexDirection("row"):setFlexSpacing(1):setFlexAlignItems("center")
+    flexbox:setFlexShrink(1):setHeight(5)
+    flexbox:setBackground(parent:getBackground())
+    flexbox.label = flexbox:addLabel():setText(label):setForeground(colors.black):setBackground(parent:getBackground()):setFlexGrow(1):setFlexShrink(0)
 
-    layout.slider = layout:addSlider():setFlexGrow(5):setFlexShrink(0):setSymbolForeground(colors.lightBlue)
-    layout.slider:setMaxValue(max-min):setValue(defaultValue-min)
+    flexbox.slider = flexbox:addSlider():setFlexGrow(5):setFlexShrink(0):setSymbolForeground(colors.lightBlue)
+    flexbox.slider:setMaxValue(max-min):setValue(defaultValue-min)
 
-    layout.input = layout:addInput():setFlexGrow(1):setFlexShrink(0)
-    layout.input:setInputType("number")
-    layout.input:setValue(tostring(defaultValue))
+    flexbox.input = flexbox:addInput():setFlexGrow(1):setFlexShrink(0)
+    flexbox.input:setInputType("number")
+    flexbox.input:setValue(tostring(defaultValue))
 
-    layout.slider:onChange(function(self,e, value)
-        layout.input:rawSetValue(tostring(value+min))
+    flexbox.slider:onChange(function(self,e, value)
+        flexbox.input:rawSetValue(tostring(value+min))
         if onValueChange then
             onValueChange(value+min)
         end
     end)
-    layout.input:onChange(function(self,e, value)
+    flexbox.input:onChange(function(self,e, value)
         local num = tonumber(value)
         if num then
             num = clamp(num,min,max)
-            layout.slider:setValue(num-min)
+            flexbox.slider:setValue(num-min)
             if onValueChange then
                 onValueChange(num)
             end
         end
     end)
-    layout.input:onLoseFocus(function(self)
+    flexbox.input:onLoseFocus(function(self)
         local num = tonumber(self:getValue())
         if num then
             num = clamp(num,min,max)
@@ -294,16 +296,16 @@ local function createSliderInput(parent,label, min, max, defaultValue,onValueCha
         end
     end)
     
-    return layout
+    return flexbox
 end
 --组合控件:数值编辑器
 local function createNumberEditorPopup(parent,title, min, max, getter, setter)
     local popup,content,confirm,cancel = createSimpleDialog(parent, "{parent.width/2-10}", "{parent.height/2-5}", 25, 14, title,true,false)
     local dirtyValue = getter()
-    local inputLayout = createSliderInput(content,"Value",min,max,getter(),function(value)
+    local inputFlexbox = createSliderInput(content,"Value",min,max,getter(),function(value)
         dirtyValue = value
     end)
-    inputLayout.input:setValue(tostring(getter()))
+    inputFlexbox.input:setValue(tostring(getter()))
     confirm:onClickUp(function()
         
         if dirtyValue then
@@ -312,29 +314,29 @@ local function createNumberEditorPopup(parent,title, min, max, getter, setter)
         end
     end)
     confirm:onClickUp(popup.close)
-    return popup,content,confirm,cancel,inputLayout
+    return popup,content,confirm,cancel,inputFlexbox
 end
 --组合控件:字符串输入框
 local function createStringInput(parent,label,defaultValue,onValueChange)
-    local layout = parent:addFlexbox():setFlexDirection("row"):setFlexSpacing(1):setFlexAlignItems("center")
-    layout:setFlexShrink(1):setHeight(5)
-    layout:setBackground(parent:getBackground())
-    layout.label = layout:addLabel():setText(label):setForeground(colors.black):setBackground(parent:getBackground()):setFlexGrow(1):setFlexShrink(0)
+    local flexbox = parent:addFlexbox():setFlexDirection("row"):setFlexSpacing(1):setFlexAlignItems("center")
+    flexbox:setFlexShrink(1):setHeight(5)
+    flexbox:setBackground(parent:getBackground())
+    flexbox.label = flexbox:addLabel():setText(label):setForeground(colors.black):setBackground(parent:getBackground()):setFlexGrow(1):setFlexShrink(0)
 
-    layout.input = layout:addInput():setFlexGrow(5):setFlexShrink(0):setWidth(10)
-    layout.input:setValue(defaultValue)
-    layout.input:onChange(function(self,e, value)
+    flexbox.input = flexbox:addInput():setFlexGrow(5):setFlexShrink(0):setWidth(10)
+    flexbox.input:setValue(defaultValue)
+    flexbox.input:onChange(function(self,e, value)
         if onValueChange then
             onValueChange(value)
         end
     end)
-    return layout
+    return flexbox
 end
 --组合控件:字符串编辑器
 local function createStringEditorPopup(parent,title, getter, setter)
     local popup,content,confirm,cancel = createSimpleDialog(parent, "{parent.width/2-10}", "{parent.height/2-5}", 25, 14, title,true,true)
     local dirtyValue = getter()
-    local inputLayout = createStringInput(content,"Value",getter(),function(value)
+    local inputFlexbox = createStringInput(content,"Value",getter(),function(value)
         dirtyValue = value
     end)
     confirm:onClickUp(function()
@@ -343,29 +345,29 @@ local function createStringEditorPopup(parent,title, getter, setter)
         end
     end)
     confirm:onClickUp(popup.close)
-    return popup,content,confirm,cancel,inputLayout
+    return popup,content,confirm,cancel,inputFlexbox
 end
 --组合控件:switch(开关)输入框
 local function createSwitchInput(parent,label,defaultValue,onValueChange)
-    local layout = parent:addFlexbox():setFlexDirection("row"):setFlexSpacing(1):setFlexAlignItems("center")
-    layout:setFlexShrink(1):setHeight(5)
-    layout:setBackground(parent:getBackground())
-    layout.label = layout:addLabel():setText(label):setForeground(colors.black):setBackground(parent:getBackground()):setFlexGrow(5):setFlexShrink(0)
+    local flexbox = parent:addFlexbox():setFlexDirection("row"):setFlexSpacing(1):setFlexAlignItems("center")
+    flexbox:setFlexShrink(1):setHeight(5)
+    flexbox:setBackground(parent:getBackground())
+    flexbox.label = flexbox:addLabel():setText(label):setForeground(colors.black):setBackground(parent:getBackground()):setFlexGrow(5):setFlexShrink(0)
 
-    layout.switch = layout:addSwitch():setFlexGrow(1):setFlexShrink(0):setWidth(3)
-    layout.switch:setValue(defaultValue)
-    layout.switch:onChange(function(self,e, value)
+    flexbox.switch = flexbox:addSwitch():setFlexGrow(1):setFlexShrink(0):setWidth(3)
+    flexbox.switch:setValue(defaultValue)
+    flexbox.switch:onChange(function(self,e, value)
         if onValueChange then
             onValueChange(value)
         end
     end)
-    return layout
+    return flexbox
 end
 --组合控件:布尔编辑器
 local function createBooleanEditorPopup(parent,title, getter, setter)
     local popup,content,confirm,cancel = createSimpleDialog(parent, "{parent.width/2-10}", "{parent.height/2-5}", 25, 14, title,true,false)
     local dirtyValue = getter()
-    local inputLayout = createSwitchInput(content,"Value",getter(),function(value)
+    local inputFlexbox = createSwitchInput(content,"Value",getter(),function(value)
         dirtyValue = value
     end)
     confirm:onClickUp(function()
@@ -374,7 +376,7 @@ local function createBooleanEditorPopup(parent,title, getter, setter)
         end
     end)
     confirm:onClickUp(popup.close)
-    return popup,content,confirm,cancel,inputLayout
+    return popup,content,confirm,cancel,inputFlexbox
 end
 -- 生成table里deep的基础对象对应的UI
 -- 找到table里的所有底层对象和key(只保留最底层的对象的key:以XXX-XXX-XXX的形式)
@@ -416,21 +418,21 @@ end
 local function createTableEditorPopup(parent,title, getter, setter)
     local popup,content,confirm,cancel = createSimpleDialog(parent, "{parent.width/2-10}", "{parent.height/2-5}", 41, 24, title,true,true)
     local dirtyValue = getter()
-    local inputLayouts = {}
+    local inputFlexboxs = {}
     local deepValue = getDeepKeys(dirtyValue)
     for k,v in pairs(deepValue) do
         -- 根据value的类型生成对应的UI
-        local inputLayout
+        local inputFlexbox
         if type(v) == "number" then
-            inputLayout = createSliderInput(content,k,-1000,1000,v,function(value)
+            inputFlexbox = createSliderInput(content,k,-1000,1000,v,function(value)
                 deepValue[k] = value
             end)
         elseif type(v) == "string" then
-            inputLayout = createStringInput(content,k,v,function(value)
+            inputFlexbox = createStringInput(content,k,v,function(value)
                 deepValue[k] = value
             end)
         elseif type(v) == "boolean" then
-            inputLayout = createSwitchInput(content,k,v,function(value)
+            inputFlexbox = createSwitchInput(content,k,v,function(value)
                 deepValue[k] = value
             end)
         end
@@ -443,7 +445,7 @@ local function createTableEditorPopup(parent,title, getter, setter)
         end
     end)
     confirm:onClickUp(popup.close)
-    return popup,content,confirm,cancel,inputLayouts
+    return popup,content,confirm,cancel,inputFlexboxs
 end
 
 local function createValueEditorPopup(parent,title,typ,getter,setter)
@@ -488,29 +490,29 @@ end
 --     secondShrink = secondShrink or 0
 --     firstMin = firstMin or 0
 --     secondMin = secondMin or 0
---     local layout = container:addFlexbox()
+--     local flexbox = container:addFlexbox()
 --     :setFlexDirection(direction):setFlexSpacing(0):setFlexAlignItems("stretch")
 
---     layout:setBackground(container:getBackground()):setBaseDraw(false)
+--     flexbox:setBackground(container:getBackground()):setBaseDraw(false)
 --     container:setBaseDraw(false)
---     --layout:setBorder(colors.red)
---     if container:getType() == "Layout" then
---         layout:setFlexGrow(1):setFlexShrink(0):setFlexBasis(1)
+--     --flexbox:setBorder(colors.red)
+--     if container:getType() == "Flexbox" then
+--         flexbox:setFlexGrow(1):setFlexShrink(0)
 --     end
---     local first = layout:addFlexbox():setFlexDirection(direction):setFlexSpacing(0):setFlexAlignItems("stretch")
---     --local first = layout:addFrame()
+--     local first = flexbox:addFlexbox():setFlexDirection(direction):setFlexSpacing(0):setFlexAlignItems("stretch")
+--     --local first = flexbox:addFrame()
 --     first:setBackground(container:getBackground())--:setBorder(colors.blue)
---     first:setFlexGrow(firstGrow):setFlexShrink(firstShrink):setFlexBasis(firstMin)
+--     first:setFlexGrow(firstGrow):setFlexShrink(firstShrink)
 --     first:setBaseDraw(false)
---     local second = layout:addFlexbox():setFlexDirection(direction):setFlexSpacing(0):setFlexAlignItems("stretch")
---     --local second = layout:addFrame()
+--     local second = flexbox:addFlexbox():setFlexDirection(direction):setFlexSpacing(0):setFlexAlignItems("stretch")
+--     --local second = flexbox:addFrame()
 --     second:setBackground(container:getBackground())--:setBorder(colors.purple)
---     second:setFlexGrow(secondGrow):setFlexShrink(secondShrink):setFlexBasis(secondMin)
+--     second:setFlexGrow(secondGrow):setFlexShrink(secondShrink)
 --     second:setBaseDraw(false)
---     layout.first = first
---     layout.second = second
+--     flexbox.first = first
+--     flexbox.second = second
 
---     return layout,first,second
+--     return flexbox,first,second
 -- end
 --lyout组合控件:分割空间
 local function createNSplitSpace(container,selfname,direction,splitNum,grow,shrink,min,names)
@@ -531,27 +533,23 @@ local function createNSplitSpace(container,selfname,direction,splitNum,grow,shri
         names = {}
     end
     
-    local layout = container:addFlexbox(selfname)
+    local flexbox = container:addFlexbox(selfname)
     :setFlexDirection(direction):setFlexSpacing(0):setFlexAlignItems("stretch")
-    layout:setBackground(container:getBackground()):setBaseDraw(false)
+    flexbox:setBackground(container:getBackground()):setBaseDraw(false)
     container:setBaseDraw(false)
-    if container:getType() == "Layout" then
-        layout:setFlexGrow(1):setFlexShrink(0):setFlexBasis(1)
+    if container:getType() == "Flexbox" then
+        flexbox:setFlexGrow(1):setFlexShrink(0)
     end
-    layout["split"] = setmetatable({},{__mode="v"}) -- !!:弱引用,防止内存泄漏
+    flexbox["split"] = setmetatable({},{__mode="v"}) -- !!:弱引用,防止内存泄漏
     for i=1,splitNum do
-        local split = layout:addFlexbox(names[i]):setFlexDirection(direction):setFlexSpacing(0):setFlexAlignItems("stretch")
+        local split = flexbox:addFlexbox(names[i]):setFlexDirection(direction):setFlexSpacing(0):setFlexAlignItems("stretch")
         split:setBackground(container:getBackground())
         split:setFlexGrow(grow[i]):setFlexShrink(shrink[i])
-        if min then
-            split:setFlexBasis(min[i])
-        else
-            split:setFlexBasis(0)
-        end
+
         split:setBaseDraw(false)
-        layout["split"][i] = split
+        flexbox["split"][i] = split
     end
-    return layout
+    return flexbox
 end
 
 --⭐⭐⭐⭐⭐
@@ -714,7 +712,7 @@ toolkit={
     makeResizeable=makeResizeable
     ,makeTaggedFrame=makeTaggedFrame,taggedFrame=makeTaggedFrame
     ,createPopup=createPopup,popup=createPopup
-    ,addLabeledLayout=addLabeledLayout,labeledLayout=addLabeledLayout
+    ,addLabeledFlexbox=addLabeledFlexbox,labeledFlexbox=addLabeledFlexbox
     ,createSimpleDialog=createSimpleDialog,simpleDialog=createSimpleDialog
     ,createAlert=createAlert,alert=createAlert
     ,createListSelector=createListSelector,listSelector=createListSelector

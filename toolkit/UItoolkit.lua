@@ -102,7 +102,7 @@ local function makeTaggedFrame(frame)
         tabBgColor = tabBgColor or colors.gray
         local page = frame:addFrame()
             :setPosition(1, 2)
-            :setSize("{parent.width-1}", "{parent.height-2}")
+            :setSize("{parent.width}", "{parent.height-1}")
             :setBackground(BackgroundColor)
             :setVisible(false)
         topBar:addItem({text=name,background=tabBgColor,foreground=tabFrotColor,page=page})
@@ -117,8 +117,8 @@ end
 
 --- 组合控件:弹出框
 local function createPopup(container, x, y, w, h, title,Draggable,Resizable)
-    x = x or "{math.floor((parent.width-self.width) / 2 > 0 and math.floor((parent.width-self.width) / 2) or 1)}"
-    y = y or "{math.floor((parent.height-self.height) / 2 > 0 and math.floor((parent.height-self.height) / 2) or 1)}"
+    x = x or (math.floor((container:getWidth()-w) / 2 > 0 and math.floor((container:getWidth()-w) / 2) or 1))
+    y = y or (math.floor((container:getHeight()-h) / 2 > 0 and math.floor((container:getHeight()-h) / 2) or 1))
     local popup = container:addFrame()
         :setSize(w, h)
         :setPosition(x, y)
@@ -140,7 +140,14 @@ local function createPopup(container, x, y, w, h, title,Draggable,Resizable)
         -- popup:animatePosition(targetX,targetY,0.2,0,"easeInOutCirc",function()
         --     container:removeChild(popup)
         -- end)
-        container:removeChild(popup)
+        -- container:removeChild(popup)
+        popup:animate()
+        :move(popup:getX(), -popup:getHeight(), 1,"easeOutQuad")
+        :entries("background",{colors.red,colors.gray,colors.red,colors.gray,colors.black},1)
+        :onComplete(function()
+            container:removeChild(popup)
+        end)
+        :start()
     end
     local close = popup:addButton()
         :setPosition("{parent.width}", 1)
@@ -157,6 +164,12 @@ local function createPopup(container, x, y, w, h, title,Draggable,Resizable)
         if Resizable then
             popup=makeResizeable(popup)
         end
+    popup:observe("width",function(self)
+        content:setSize(self:getWidth()-2,self:getHeight()-2)
+    end)
+    popup:observe("height",function(self)
+        content:setSize(self:getWidth()-2,self:getHeight()-2)
+    end)
     popup:prioritize()
     popup:onFocus(function(self)
         popup:prioritize()
@@ -171,6 +184,20 @@ local function createPopup(container, x, y, w, h, title,Draggable,Resizable)
     popup.close = closeF
     return popup,content
 end
+
+--- 组合控件:tab栏弹出框,为了避免一些情况无法拖动,只能点击来翻页
+local function createTabPopup(container, x, y, w, h, title,tabNames)
+    local popup,content = createPopup(container, x, y, w, h, title,false,false)
+    content = makeTaggedFrame(content)
+    local pages = {}
+    for _,v in pairs(tabNames) do
+        local page = content:addPage(v)
+        pages[#pages+1] = page
+    end
+    return popup,content,pages
+end
+
+
 --组合控件:带标签的布局
 local function addLabeledFlexbox(parent,labelText,labelColor,direction,pandding)
      labelColor = labelColor or colors.black
@@ -194,13 +221,17 @@ end
 --组合控件:简单对话框
 local function createSimpleDialog(container, x, y, w, h, title,Draggable,Resizable)
     local popup,content = createPopup(container, x, y, w, h, title,Draggable,Resizable)
-    content:setFlexDirection("column"):setFlexAlignItems("stretch"):setFlexSpacing(1)
+    content:setFlexDirection("column"):setFlexAlignItems("stretch"):setFlexWrap(false)
+    :setFlexJustifyContent("center")
+    local restSpace =content:addFlexbox({height=3}):setFlexDirection("row"):setFlexAlignItems("flex-end"):setFlexJustifyContent("flex-end"):setFlexSpacing(1)
+                                        :setFlexGrow(0.1):setFlexShrink(1)
 
-    local restSpace =content:addFlexbox():setFlexDirection("row"):setFlexAlignItems("flex-end"):setFlexJustifyContent("flex-end"):setFlexSpacing(1)
-                                        :setFlexGrow(0.1):setFlexShrink(999):setFlexOrder(999):setFlexMinHeight(2)--:setBorder(colors.red)
-                                        :setBackground(content:getBackground())
-    local confirm = restSpace:addButton():setText("Confirm"):setFlexGrow(1):setFlexShrink(1):setFlexMinWidth(3)
-    local cancel = restSpace:addButton():setText("Cancel"):setFlexGrow(1):setFlexShrink(1):setFlexMinWidth(3)
+    local confirm = restSpace:addButton():setText("Confirm"):setFlexGrow(1):setFlexShrink(1)
+                                        :setBackground("{self.clicked and colors.black or colors.cyan}")
+                                        :setForeground("{self.clicked and colors.cyan or colors.black}")
+    local cancel = restSpace:addButton():setText("Cancel"):setFlexGrow(1):setFlexShrink(1)
+                                        :setBackground("{self.clicked and colors.black or colors.cyan}")
+                                        :setForeground("{self.clicked and colors.cyan or colors.black}")
 
     cancel:onClickUp(popup.close)
 
@@ -211,8 +242,9 @@ local function createSimpleDialog(container, x, y, w, h, title,Draggable,Resizab
 end
 --组合控件:提示框
 local function createAlert(container, x, y, w, h, text,onConfirm,onCancel)
-    local popup,content,confirm,cancel = createSimpleDialog(container, x, y, w, h, "Alert",true,true)
-    local label = content:addLabel():setText(text):setFlexGrow(1):setFlexShrink(1):setFlexOrder(1)
+    local popup,content,confirm,cancel,restSpace = createSimpleDialog(container, x, y, w, h, "Alert",true,true)
+    local label = content:addLabel():setText(text):setFlexGrow(1):setFlexShrink(1)
+    restSpace:prioritize()
     confirm:onClickUp(onConfirm, popup.close)
     cancel:onClick(onCancel)
     return popup,content,confirm,cancel,label
@@ -220,19 +252,20 @@ end
 --组合控件:列表选择器
  -- items = { {text = "item1",bg=,fg=,args={}}, ...}
 local function createListSelector(container, x, y, w, h, title,Draggable,Resizable,items,onConfirm)
-    local popup,content,confirm,cancel = createSimpleDialog(container, x, y, w, h, title,Draggable,Resizable)
+    local popup,content,confirm,cancel,restSpace = createSimpleDialog(container, x, y, w, h, title,Draggable,Resizable)
     local items = items or {}
     local itemNum = #items
-    local list = content:addList():setFlexGrow(0.1):setFlexMinHeight(clamp(itemNum,1,3)):setFlexOrder(1)
-
+    local list = content:addList():setFlexGrow(0.1)
+    restSpace:prioritize()
     
     for i=1,itemNum do
-        list:addItem(items[i].text,items[i].bg,items[i].fg,items[i].args)
+        list:addItem(items[i])
     end
     confirm:onClickUp(function()
-        local selected = list:getValue()
+        local selected = list:getSelectedItem()
         if selected and onConfirm then
             onConfirm(selected,selected.text,selected.args)
+            popup.close()
         end
     end)
     confirm:onClickUp(popup.close)
@@ -254,7 +287,7 @@ local function createGenericList(parent,title,direction,pandding,gap,alignItems,
     if parent:getType() == "flexbox" then
         flexbox:setFlexGrow(1):setFlexShrink(0)
     end
-    flexbox:addLabel():setText(title):setForeground(colors.black):setBackground(parent:getBackground()):setFlexOrder(-1)
+    flexbox:addLabel():setText(title):setForeground(colors.black):setBackground(parent:getBackground())
     return flexbox
     
 end
@@ -712,6 +745,7 @@ toolkit={
     makeResizeable=makeResizeable
     ,makeTaggedFrame=makeTaggedFrame,taggedFrame=makeTaggedFrame
     ,createPopup=createPopup,popup=createPopup
+    ,createTabPopup=createTabPopup,tabPopup=createTabPopup
     ,addLabeledFlexbox=addLabeledFlexbox,labeledFlexbox=addLabeledFlexbox
     ,createSimpleDialog=createSimpleDialog,simpleDialog=createSimpleDialog
     ,createAlert=createAlert,alert=createAlert

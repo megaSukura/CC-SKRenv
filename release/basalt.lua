@@ -1918,11 +1918,11 @@ table.insert(_b,cb)ab=ab+#db end end;self.set("width",ab)return aa.setItems(self
 function ca:render()_a.render(self)local da=1
 for _b,ab in ipairs(self.get("items"))do if type(ab)==
 "string"then ab={text=" "..ab.." "}
-self.get("items")[i]=ab end;local bb=ab.selected
-local cb=ab.selectable==false and
-self.get("separatorColor")or(bb and
-(ab.selectedForeground or self.get("selectedForeground"))or
-(ab.foreground or self.get("foreground")))
+self.get("items")[_b]=ab end;local bb=ab.selected
+local cb=
+ab.selectable==false and self.get("separatorColor")or(bb and(ab.selectedForeground or
+self.get("selectedForeground"))or(ab.foreground or
+self.get("foreground")))
 local db=
 bb and(ab.selectedBackground or self.get("selectedBackground"))or(ab.background or self.get("background"))
 self:blit(da,1,ab.text,string.rep(ba[cb],#ab.text),string.rep(ba[db],#ab.text))da=da+#ab.text end end
@@ -1981,9 +1981,9 @@ table.remove(__a._schedule,bca)return true end end;return false end
 local bba={mouse_click=true,mouse_up=true,mouse_scroll=true,mouse_drag=true}local cba={key=true,key_up=true,char=true}
 local function dba(aca,...)if(aca=="terminate")then __a.stop()
 return end;if aba(aca,...)then return end
-if(bba[aca])then
-c_a[a_a]:dispatchEvent(aca,...)elseif(cba[aca])then
-if(b_a~=nil)then b_a:dispatchEvent(aca,...)end else
+if(bba[aca])then if c_a[a_a]then
+c_a[a_a]:dispatchEvent(aca,...)end elseif(cba[aca])then if(b_a~=nil)then
+b_a:dispatchEvent(aca,...)end else
 for bca,cca in pairs(c_a)do cca:dispatchEvent(aca,...)end end
 for bca,cca in ipairs(__a._schedule)do
 if

@@ -182,11 +182,7 @@ itemListReadObj.readButton:onClick(function(self)
         itemListReadObj.taskList:addItem(taskStr)
     end
 end)
--- 按下开始按钮,并跳转到下一页
-itemListReadObj.StartButton:onClick(function(self)
-    mainFrame.topBar:getItems()[3].page:setVisible(false)
-    mainFrame.topBar:getItems()[4].page:setVisible(true)
-end)
+
 
 --#endregion
 
@@ -284,10 +280,14 @@ local function startTask()
     )
 end
 itemListReadObj.StartButton:onClick(function(self)
+    --
+    mainFrame.topBar:getItems()[3].page:setVisible(false)
+    mainFrame.topBar:getItems()[4].page:setVisible(true)
+    --
     craftTaskObj.logList:clear()
     craftTaskObj.failedTaskList:clear()
     craftTaskObj.taskProgress:setProgress(0)
-    if craftThread or (coroutine.status(craftThread) or "nil") ~= "suspended" then
+    if not craftThread or (coroutine.status(craftThread) or "nil") ~= "suspended" then
 
         craftThread = basalt.schedule(startTask)
 
@@ -296,7 +296,7 @@ itemListReadObj.StartButton:onClick(function(self)
     end
 end)
 craftTaskObj.retryButton:onClick(function(self)
-    if craftThread or(coroutine.status(craftThread) or "nil") ~= "suspended" then
+    if not craftThread or(coroutine.status(craftThread) or "nil") ~= "suspended" then
     -- 重试失败的任务,不删除log
     craftTaskObj.logList:addItem("Retry:")
     craftTaskObj.failedTaskList:clear()

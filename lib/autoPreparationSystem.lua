@@ -159,6 +159,9 @@ local function extractItemsInClipboard(data,output)
         local pages = item.tag.Pages
         for page_index, page in pairs(pages) do
             for entry_index, entry in pairs(page.Entries) do
+                if not entry.Icon then
+                    goto continue
+                end
                 local id = entry.Icon.id
                 local quantity = 1
                 local match = string.match(entry.Text, "n x(%d+)")

@@ -1,6 +1,7 @@
 --- @type basalt
 local basalt = require(basaltPath)
 local toolkit = require("toolkit.UItoolkit")
+
 basalt.LOGGER.setEnabled(true)
 basalt.LOGGER.setLogToFile(true)
 basalt.LOGGER.info("test")
@@ -66,5 +67,113 @@ local popup,content,confirm,cancel,list = toolkit.createListSelector(page4,nil,n
     function(selected,text,args)
         basalt.LOGGER.info("selected "..selected.text)
     end)
+--=======================-- PAGE5 --=======================--
+local page5 =main:addPage("page5")
+local Rthread
+Rthread = basalt.schedule(function ()
+    basalt.LOGGER.info("test schedule:")
+    local i = 0
+    while i<10 do
+        basalt.LOGGER.info("clicked")
+        coroutine.yield("mouse_click")
+        i = i+1
+    end
+    
+end)
+--=======================-- PAGE6 --=======================--
+local page6 = main:addPage("page6")
+local window2,content2 = toolkit.createPopup(page6,nil,nil,20,8,"test2",true,true)
+content2:setFlexDirection("column"):setFlexAlignItems("stretch"):setFlexJustifyContent("center")
+-- 测试createUIFromTable
+local table1 = {
+    type = "split",
+    name = "split1",
+    splitDirection = "column",
+    splitNum = 2,
+    childGrow = { 1, 1 },
+    childNames = { "button1Box", "button2Box" },
+    background = colors.brown,
+    splitChildren = {
+        {
+            flexDirection = "column",
+            flexJustifyContent = "center",
+            flexAlignItems = "stretch",
+            background = colors.green,
+            children = {
+                {
+                    type = "button",
+                    text = "button1",
+                    background = colors.blue,
+                }
+            },
+        },
+        {
+            flexDirection = "column",
+            flexJustifyContent = "flex-end",
+            flexAlignItems = "stretch",
+            background = colors.cyan,
+            children = {
+                {
+                    type = "button",
+                    text = "button2",
+                    background = colors.red,
+                }
+            },
+        }
+    }
+}
+local harvestObj = toolkit.createUIFromTable(content2,table1)
+
+--=======================-- PAGE7 --=======================--
+local page7 = main:addPage("page7")
+--测试createButtonNumberInput
+local numInput = toolkit.createButtonNumberInput(page7,"numInput",100,200,150,function(value)
+    basalt.LOGGER.info("numInput: "..value)
+end)
+--测试createNumberEditorPopup
+local _num = 150
+local numEditor = toolkit.createNumberEditorPopup(page7,"numEditor",100,200,
+    function()
+        return _num
+    end,
+    function(value)
+        _num = value
+        basalt.LOGGER.info("numEditor: "..value)
+    end
+)
+
+
+--测试createStringInput
+local stringInput = toolkit.createStringInput(page7,"stringInput","test",function(value)
+    basalt.LOGGER.info("stringInput: "..value)
+end)
+stringInput:setY(10):setWidth(20)
+
+--测试createCheckboxInput
+local checkboxInput = toolkit.createCheckboxInput(page7,"checkboxInput",true,function(value)
+    basalt.LOGGER.info("checkboxInput: "..tostring(value))
+end)
+checkboxInput:setY(20):setWidth(20)
+
+--=======================-- PAGE8 --=======================--
+local page8 = main:addPage("page8")
+--测试createTableEditorPopup
+local _table = {
+    {text = "item1",args = {a = 1,b = 2}},
+    {text = "item2",args = {c = 3,d = 4}},
+}
+local popup8,content8,confirm8,cancel8,inputFlexboxs8 =
+        toolkit.createTableEditorPopup(page8,"tableEditor",
+            function()
+                return _table
+            end,
+            function(value)
+                basalt.LOGGER.info("tableEditor 1: ")
+                print_table(_table,basalt.LOGGER.info)
+                _table = value
+                basalt.LOGGER.info("tableEditor 2: ")
+                print_table(_table,basalt.LOGGER.info)
+            end
+        )
 
 basalt:run()
